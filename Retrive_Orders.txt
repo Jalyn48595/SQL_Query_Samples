@@ -1,0 +1,151 @@
+*&---------------------------------------------------------------------*
+*& Report ZNAUS24_005_Report_Type_2
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT znaus24_005_Report_Type_2.
+
+*--------------------------- Parameters -------------------------------*
+
+PARAMETERS p_cat(50) TYPE c.
+PARAMETERS p_price(15) TYPE c.
+
+*--------------------------- Constants -------------------------------*
+
+CONSTANTS c_header(300) TYPE c VALUE 'Product Name               Product Category                                     Unit Price  # Sold       Order Revenue        Order Cost            Order Profit'.
+CONSTANTS c_cost_num(3) TYPE p DECIMALS 2 VALUE '0.25'.
+
+*--------------------------- Variables -------------------------------*
+
+DATA v_cost(10) TYPE p DECIMALS 2.
+DATA v_revenue(10) TYPE p DECIMALS 2.
+DATA v_profit(10) TYPE p DECIMALS 2.
+
+*-------------------- Internal Table Structure -----------------------*
+
+TYPES: BEGIN OF products,
+         product_name     LIKE znaus24_products-product_name,
+         product_category LIKE znaus24_products-product_category,
+         price            LIKE znaus24_products-price,
+         quantity         LIKE znaus24_orders-quantity,
+
+       END OF products.
+
+*------------------------- Internal Table ----------------------------*
+
+DATA: itab_products TYPE STANDARD TABLE OF products,
+      wa_products   TYPE products.
+
+
+*----------------------------- Output --------------------------------*
+
+IF p_cat = 'ANY' AND p_price = 'ANY'.
+  PERFORM get_any.
+
+ELSEIF p_cat <> 'ANY' AND p_price = 'ANY'.
+  PERFORM get_any_price.
+
+ELSEIF p_cat = 'ANY' AND p_price <> 'ANY'.
+  PERFORM get_any_cat.
+
+ELSEIF p_cat <> 'ANY' AND p_price <> 'ANY'.
+  PERFORM get_specific.
+ENDIF.
+
+*------------------------------ Forms --------------------------------*
+
+
+FORM get_any.
+  SELECT product_name product_category price quantity
+  INTO TABLE itab_products
+   FROM znaus24_products
+  JOIN znaus24_orders
+  ON znaus24_products~product_id = znaus24_orders~product_id.
+  IF sy-subrc <> 0.
+    WRITE:/ 'No records found'.
+
+  ELSE.
+    FORMAT COLOR 5.
+    WRITE: c_header.
+    FORMAT COLOR OFF.
+    LOOP AT itab_products INTO wa_products.
+      COMPUTE v_cost = ( wa_products-price * c_cost_num ) * wa_products-quantity.
+      COMPUTE v_revenue = wa_products-price * wa_products-quantity.
+      COMPUTE v_profit = v_revenue - v_cost.
+      WRITE:/ wa_products-product_name, '|', wa_products-product_category, '|', wa_products-price, '|', wa_products-quantity, '|', v_revenue, '|', v_cost, '|', v_profit, '|'.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.
+
+
+FORM get_any_price.
+  SELECT product_name product_category price quantity
+INTO TABLE itab_products
+ FROM znaus24_products
+JOIN znaus24_orders
+ON znaus24_products~product_id = znaus24_orders~product_id
+ WHERE product_category = p_cat.
+  IF sy-subrc <> 0.
+    WRITE:/ 'No records found'.
+
+  ELSE.
+    FORMAT COLOR 5.
+    WRITE: c_header.
+    FORMAT COLOR OFF.
+    LOOP AT itab_products INTO wa_products.
+      COMPUTE v_cost = ( wa_products-price * c_cost_num ) * wa_products-quantity.
+      COMPUTE v_revenue = wa_products-price * wa_products-quantity.
+      COMPUTE v_profit = v_revenue - v_cost.
+      WRITE:/ wa_products-product_name, '|', wa_products-product_category, '|', wa_products-price, '|', wa_products-quantity, '|', v_revenue, '|', v_cost, '|', v_profit, '|'.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.
+
+
+FORM get_any_cat.
+  SELECT product_name product_category price quantity
+  INTO TABLE itab_products
+   FROM znaus24_products
+  JOIN znaus24_orders
+  ON znaus24_products~product_id = znaus24_orders~product_id
+   WHERE price < p_price.
+  IF sy-subrc <> 0.
+    WRITE:/ 'No records found'.
+
+  ELSE.
+    FORMAT COLOR 5.
+    WRITE: c_header.
+    FORMAT COLOR OFF.
+    LOOP AT itab_products INTO wa_products.
+      COMPUTE v_cost = ( wa_products-price * c_cost_num ) * wa_products-quantity.
+      COMPUTE v_revenue = wa_products-price * wa_products-quantity.
+      COMPUTE v_profit = v_revenue - v_cost.
+      WRITE:/ wa_products-product_name, '|', wa_products-product_category, '|', wa_products-price, '|', wa_products-quantity, '|', v_revenue, '|', v_cost, '|', v_profit, '|'.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.
+
+
+FORM get_specific.
+  SELECT product_name product_category price quantity
+INTO TABLE itab_products
+ FROM znaus24_products
+JOIN znaus24_orders
+ON znaus24_products~product_id = znaus24_orders~product_id
+ WHERE product_category = p_cat
+AND price < p_price.
+  IF sy-subrc <> 0.
+    WRITE:/ 'No records found'.
+
+  ELSE.
+    FORMAT COLOR 5.
+    WRITE: c_header.
+    FORMAT COLOR OFF.
+    LOOP AT itab_products INTO wa_products.
+      COMPUTE v_cost = ( wa_products-price * c_cost_num ) * wa_products-quantity.
+      COMPUTE v_revenue = wa_products-price * wa_products-quantity.
+      COMPUTE v_profit = v_revenue - v_cost.
+      WRITE:/ wa_products-product_name, '|', wa_products-product_category, '|', wa_products-price, '|', wa_products-quantity, '|', v_revenue, '|', v_cost, '|', v_profit, '|'.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.

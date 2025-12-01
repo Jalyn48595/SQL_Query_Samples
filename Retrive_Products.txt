@@ -1,0 +1,95 @@
+*&---------------------------------------------------------------------*
+*& Report ZNAUS24_005_Report_Type_1
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT znaus24_005_Report_Type_1.
+
+*-------------------------- Parameters --------------------------------*
+
+PARAMETERS p_name AS CHECKBOX.
+PARAMETERS p_cat AS CHECKBOX.
+PARAMETERS p_term(30) TYPE c.
+
+*--------------------------- Constants --------------------------------*
+
+CONSTANTS c_header(300) TYPE c VALUE 'Product Name               Product Category                                    Depth Height Width   Price'.
+
+*-------------------- Internal Table Structure ------------------------*
+
+TYPES: BEGIN OF products,
+         product_name     LIKE znaus24_products-product_name,
+         product_category LIKE znaus24_products-product_category,
+         depth            LIKE znaus24_products-depth,
+         height           LIKE znaus24_products-height,
+         width            LIKE znaus24_products-width,
+         price            LIKE znaus24_products-price,
+       END OF products.
+
+*------------------------- Internal Table -----------------------------*
+
+DATA: itab_products TYPE STANDARD TABLE OF products,
+      wa_products   TYPE products.
+
+*--------------------------- Output -----------------------------------*
+
+IF p_name IS INITIAL AND p_cat IS INITIAL.
+  FORMAT COLOR 6 INVERSE ON.
+  WRITE:/ 'Please check a box to search for a product name or product category'.
+  FORMAT COLOR OFF.
+
+ELSEIF p_term IS INITIAL.
+  FORMAT COLOR 6 INVERSE ON.
+  WRITE:/ 'Please enter a search term'.
+  FORMAT COLOR OFF.
+
+ELSEIF p_name IS NOT INITIAL AND p_term IS NOT INITIAL.
+  PERFORM get_name.
+
+ELSEIF p_cat IS NOT INITIAL AND p_term IS NOT INITIAL.
+  PERFORM get_cat.
+
+ENDIF.
+
+*--------------------------- Forms ----------------------------------*
+
+
+FORM get_name.
+  SELECT product_name product_category depth height width price
+  FROM znaus24_products INTO TABLE itab_products
+  WHERE product_name = p_term.
+  IF sy-subrc <> 0.
+    FORMAT COLOR 6 INVERSE ON.
+    WRITE:/ 'No matching records found'.
+    FORMAT COLOR OFF.
+    RETURN.
+  ELSE.
+    FORMAT COLOR 4.
+    WRITE: c_header.
+    FORMAT COLOR OFF.
+    LOOP AT itab_products INTO wa_products.
+      WRITE:/ wa_products-product_name, '|', wa_products-product_category, '|', wa_products-depth,'|', wa_products-height,'|', wa_products-width,'|', '$', wa_products-price,'|'.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.
+
+
+
+FORM get_cat.
+  SELECT product_name product_category depth height width price
+  FROM znaus24_products INTO TABLE itab_products
+  WHERE product_category = p_term.
+  IF sy-subrc <> 0.
+    FORMAT COLOR 6 INVERSE ON.
+    WRITE:/ 'No matching records found'.
+    FORMAT COLOR OFF.
+    RETURN.
+  ELSE.
+    FORMAT COLOR 4.
+    WRITE: c_header.
+    FORMAT COLOR OFF.
+    LOOP AT itab_products INTO wa_products.
+      WRITE:/ wa_products-product_name, '|', wa_products-product_category, '|', wa_products-depth,'|', wa_products-height,'|', wa_products-width,'|', '$', wa_products-price,'|'.
+    ENDLOOP.
+  ENDIF.
+ENDFORM.

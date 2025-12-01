@@ -1,0 +1,75 @@
+*&---------------------------------------------------------------------*
+*& Report ZNAUS24_005_report_7
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT znaus24_005_report_7.
+
+*------------------------------ Parameters ----------------------------*
+
+PARAMETERS p_cat LIKE znaus24_products-product_category.
+
+*------------------------------ Variables -----------------------------*
+
+DATA v_count(3) TYPE p.
+DATA v_revenue(10) TYPE p DECIMALS 2.
+
+*------------------------------ Constants -----------------------------*
+
+CONSTANTS c_header(200) TYPE c VALUE 'Product Name                    Customer Name                              Price    Quantity'.
+
+*--------------------- Internal Table Structure -----------------------*
+
+TYPES: BEGIN OF revenue,
+         quantity      LIKE znaus24_orders-quantity,
+         product_name  LIKE znaus24_products-product_name,
+         product_price LIKE znaus24_products-price,
+         first_name    LIKE znaus24_customer-first_name,
+         last_name     LIKE znaus24_customer-last_name,
+       END OF revenue.
+
+*--------------------------- Internal Table ----------------------------*
+
+DATA: itab_revenue TYPE STANDARD TABLE OF revenue,
+      wa_revenue   TYPE revenue.
+
+*--------------------------- Calculations -----------------------------*
+
+COMPUTE v_revenue = wa_revenue-product_price * wa_revenue-quantity.
+
+*--------------------------------- SQL ---------------------------------*
+SELECT
+znaus24_orders~quantity
+znaus24_products~product_name
+znaus24_products~price
+znaus24_customer~first_name
+znaus24_customer~last_name
+INTO TABLE itab_revenue
+FROM znaus24_orders
+JOIN znaus24_products
+ON znaus24_orders~product_id = znaus24_products~product_id
+LEFT OUTER JOIN znaus24_customer ON znaus24_orders~customer_id = znaus24_customer~customer_id
+WHERE znaus24_products~product_category = p_cat.
+
+
+*------------------------------- Output --------------------------------*
+
+LOOP AT itab_revenue INTO wa_revenue.
+  ADD 1 TO v_count.
+  v_revenue = v_revenue + ( wa_revenue-product_price * wa_revenue-quantity ).
+ENDLOOP.
+
+IF v_count > 0.
+  FORMAT COLOR 3.
+  WRITE: c_header.
+  FORMAT COLOR OFF.
+  LOOP AT itab_revenue INTO wa_revenue.
+    WRITE:/ '|', wa_revenue-product_name, '|', wa_revenue-first_name, ' ', wa_revenue-last_name, '|', wa_revenue-product_price, '|', wa_revenue-quantity, '|'.
+  ENDLOOP.
+
+  SKIP.
+  WRITE: 'Total Revenue: $ ', v_revenue.
+
+ELSE.
+  WRITE: 'No Records Found'.
+ENDIF.

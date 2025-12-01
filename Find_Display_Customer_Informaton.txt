@@ -1,0 +1,59 @@
+*&---------------------------------------------------------------------*
+*& Report ZNAUS24_005_report_5
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT znaus24_005_report_5.
+
+*--------------------- Internal Table Structure -----------------------*
+
+TYPES: BEGIN OF customer_data,
+last_name LIKE znaus24_customer-last_name,
+first_name LIKE znaus24_customer-first_name,
+cust_email LIKE znaus24_customer-cust_email,
+cust_phone LIKE znaus24_customer-cust_phone,
+END of customer_data.
+
+*---------------------------- Parameters -------------------------------*
+
+PARAMETERS p_last(30) TYPE c.
+
+*----------------------------- Variables -------------------------------*
+
+DATA total(3) TYPE c.
+
+*---------------------------- Constants --------------------------------*
+
+CONSTANTS c_header(200) TYPE c VALUE
+'Last Name              First Name              Email                       Phone#'.
+
+*--------------------------- Internal Table ----------------------------*
+
+DATA: itab_customer TYPE STANDARD TABLE OF customer_data,
+      wa_customer   TYPE customer_data.
+
+*------------------- Get Data from Internal Table ----------------------*
+
+SELECT last_name first_name cust_email cust_phone
+FROM znaus24_customer INTO TABLE itab_customer
+WHERE last_name = p_last.
+
+
+*------------------------------- Output --------------------------------*
+FORMAT COLOR 4.
+WRITE: c_header.
+FORMAT COLOR OFF.
+SKIP.
+
+ULINE.
+
+LOOP AT itab_customer INTO wa_customer.
+  ADD 1 TO total.
+  WRITE:/ wa_customer-last_name, wa_customer-first_name, wa_customer-cust_email, wa_customer-cust_phone.
+ENDLOOP.
+SKIP.
+
+ULINE.
+
+FORMAT COLOR 7.
+WRITE:/ total, 'Customers have the last name', p_last.
